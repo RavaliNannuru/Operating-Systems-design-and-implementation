@@ -1,0 +1,5 @@
+while read line 
+do
+$line
+done < .profile
+./main
