@@ -10,37 +10,37 @@
 
 pid_t pid1;
 
-int run_exec(char **);
+int execCommands(char **);
 
-char **split_cmd_line(char *line)
+char **splitInputCommands(char *my_string)
 {
-	int buffsize = 50, pos = 0;
-	char *token;
-	char **tokenpos = malloc(buffsize * sizeof(char*));
+	int buffsize = 50,i = 0;
+	char *command;
+	char **commands = malloc(buffsize * sizeof(char*));
 
-	if (!tokenpos) {
-		fprintf(stderr, "sh: no memory to allocate, re-run ur shell\n");
+	if (!commands) {
+		fprintf(stderr, "Memory allocation failed, relaunch the program\n");
 		exit(0);
 	}
 
-	token = strtok(line, " \a\r\n\t");
-	while (token != NULL) {
-		tokenpos[pos] = token;
-		pos++;
+	command = strtok(my_string, " \a\r\n\t");
+	while (command != NULL) {
+		commands[i] = command;
+		i++;
 
-		if (pos >= buffsize) {
+		if (i >= buffsize) {
 			buffsize = buffsize + 50;
-			tokenpos = realloc(tokenpos, buffsize * sizeof(char*));
-			if (!tokenpos) {
-				fprintf(stderr, "sh: no memory to allocate, re-run ur shell\n");
+			commands = realloc(commands, buffsize * sizeof(char*));
+			if (!commands) {
+				fprintf(stderr, "Memory allocation failed, relaunch the program\n");
 				exit(0);
 			}
 		}
 
-		token = strtok(NULL, " \a\r\n\t");
+		command = strtok(NULL, " \a\r\n\t");
 	}
-	tokenpos[pos] = NULL;
-	return tokenpos;
+	commands[i] = NULL;
+	return commands;
 }
 
 void chld_SIGQUIT_handler(int num)
@@ -48,11 +48,7 @@ void chld_SIGQUIT_handler(int num)
 	exit(0);
 }
 
-int shell_exit()
-{
-	exit(0);
-}
-int parse_args(char **args)
+int parseArguments(char **args)
 {
 
 	int status=0;
@@ -60,23 +56,23 @@ int parse_args(char **args)
 	if (strcmp(args[0],"exit")==0)
 	{
 		puts("shell is gone exit");
-		status = shell_exit();
+		exit(0);
 	}
 	else
 	{
-		return run_exec(args);
+		return execCommands(args);
 	}
 
 	return status;
 
 }
 
-int run_exec(char **args)
+int execCommands(char **args)
 {
 
 	int status;
 	clock_t start, end, total;
-	char c;
+	char choice;
 	pid_t pidp, pid2, wpid;
 	pidp = getpid();
 	pid1 = fork();
@@ -98,11 +94,12 @@ int run_exec(char **args)
 
 			while(1){
 				sleep(5);
-				printf("Do you want to terminate the current command[Y/N]:");
-				c=getchar();
-				getchar();
+				printf("please enter [y]es, [n]o to terminate the program:");
+				scanf("%c", &choice);
 				fflush(stdin);
-				if (c == 'Y' || c == 'y') {
+				printf("out:%c",choice);
+				if (choice == 'y') {
+					puts("inside");
 					kill(pidp, SIGCHLD);
 					exit(0);
 				}
@@ -129,19 +126,23 @@ void SIGCHLD_handler(int num)
 }
 
 int main( void ) {
+	// number of bytes to read
 	int nbytes = 100,bytes_read;
+	// input command will be stored in my_string
 	char *my_string;
-	char **args;
-	int status;
+	// after parsing of commands, o/p is stored in args
+	char **arguments;
 
 	if (signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR) {
 		printf("SIGINT install error\n");
 		exit(1);
 	}
+	// allocates memory for the command input
 	my_string = (char *) malloc (nbytes + 1);
 	while(1)
 	{
-		printf("--");
+		//input prompt
+		printf("\n->");
 		bytes_read = getline (&my_string, &nbytes, stdin);
 
 		if (bytes_read == -1)
@@ -150,12 +151,14 @@ int main( void ) {
 		}
 		else
 		{
-			puts ("Your commands...");
+			puts ("Entered Commands...");
 			puts (my_string);
 		}
-		args = split_cmd_line(my_string);
-		status = parse_args(args);
+		arguments = splitInputCommands(my_string);
+		parseArguments(arguments);
 	}
+	//free the allocated memory
 	free(my_string);
+	free(arguments);
 	return 0;
 }
