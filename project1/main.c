@@ -9,10 +9,41 @@
 #include <errno.h>
 
 pid_t pid1;
-
+int timer = 2;
+char * path,*home;
 int execCommands(char **);
 int exec_io_redirection(char **);
 void SIGCHLD_handler(int);
+
+char* get_var(char *file, char *key) {
+	FILE * fp;
+	char * line = NULL;
+	size_t len = 0;
+	ssize_t read;
+	char * token;
+	char *search = "=";
+
+	fp = fopen(file, "r");
+	if (fp == NULL)
+		exit(EXIT_FAILURE);
+
+	while ((read = getline(&line, &len, fp)) != -1) {
+		if(strstr(line, key) != NULL){
+			//token = strtok(line, search);
+			//token = strtok(NULL, search);
+			token = line;
+			break;
+		}
+	}
+
+	fclose(fp);
+	if (line)
+		free(line);
+	char *pos;
+	if ((pos=strchr(token, '\n')) != NULL)
+		*pos = '\0';
+	return token;
+}
 
 char **splitInputCommands(char *my_string)
 {
@@ -21,7 +52,7 @@ char **splitInputCommands(char *my_string)
 	char **commands = malloc(buffsize * sizeof(char*));
 
 	if (!commands) {
-		fprintf(stderr, "Memory allocation failed, relaunch the program\n");
+		fprintf(stderr, "Memory allocation failed, relaunch the program");
 		exit(0);
 	}
 
@@ -34,7 +65,7 @@ char **splitInputCommands(char *my_string)
 			buffsize = buffsize + 50;
 			commands = realloc(commands, buffsize * sizeof(char*));
 			if (!commands) {
-				fprintf(stderr, "Memory allocation failed, relaunch the program\n");
+				fprintf(stderr, "Memory allocation failed, relaunch the program");
 				exit(0);
 			}
 		}
@@ -93,16 +124,14 @@ int exec_io_redirection(char **args) {
 			pid2 = fork();
 			if (pid2 == 0) {
 				if (signal(SIGQUIT, chld_SIGQUIT_handler) == SIG_ERR) {
-					printf("SIGINT install error\n");
+					printf("Signal received for internal error...");
 					exit(1);
 				}
 				while(1){
-					sleep(5);
-					printf("please enter [y]es, [n]o to terminate the program:");
-					scanf("%c", &choice);
-					//printf("out:%c",choice);
-					if (choice == 'y') {
-						puts("inside");
+					char buff[60];
+					sleep(timer);
+					printf("Enter ctrl+d to terminate, else program will continue:");
+					if (fgets(buff,60,stdin) != NULL) {
 						kill(pidp, SIGCHLD);
 						exit(0);
 					}
@@ -149,45 +178,41 @@ int execCommands(char **args)
 	int status;
 	clock_t start, end, total;
 	char choice;
-	pid_t pidp, pid2, wpid;
+	pid_t pidp, pid2;
 	pidp = getpid();
-	if (signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR) {
-		printf("SIGINT install error\n");
-		exit(1);
-	}
 	pid1 = fork();
 	if (pid1 == 0) {
 		if (execvp(args[0], args) == -1) {
-			perror("sh: couldnot exec, try re-run");
+			perror("command execution failed...");
 		}
 		exit(0);
 	} else if (pid1 < 0) {
 
-		perror("sh: couldnot fork, try re-run");
+		perror("command execution failed...");
+
 	} else {
 		pid2 = fork();
 		if (pid2 == 0) {
+			pid2 =getpid();
+			char ch;
+
 			if (signal(SIGQUIT, chld_SIGQUIT_handler) == SIG_ERR) {
-				printf("SIGINT install error\n");
+				printf("Signal received for internal error...");
 				exit(1);
 			}
 
 			while(1){
-				sleep(5);
-				printf("please enter [y]es, [n]o to terminate the program:");
-				choice=getchar();
-				printf("yo",choice);
-
-				//putchar(choice);
-				if (choice == 'y') {
-					puts("inside");
+				char buff[60];
+				sleep(timer);
+				printf("Enter ctrl+d to terminate, else program will continue:");
+				if (fgets(buff,60,stdin) != NULL) {
 					kill(pidp, SIGCHLD);
 					exit(0);
 				}
 			}
 		}
-		waitpid(pid1, 0,0);
 
+		waitpid(pid1, 0,0);
 	}
 	kill(pid2, SIGQUIT);
 	waitpid(pid2, 0, 0);
@@ -206,10 +231,22 @@ int main( void ) {
 	char *my_string;
 	// after parsing of commands, o/p is stored in args
 	char **arguments;
+	char ch;
 	int contains_io =0;
 
+	printf("Reading profile file...\n");
+	putenv(get_var(".profile","TIMER"));
+	timer=atoi(getenv("TIMER"));
+	printf("Timer set to:%d\n",timer);
+	path=get_var(".profile","PATH");
+	putenv(path);
+	printf("PATH env variable set to:%s\n",path);
+	home=get_var(".profile","HOME");
+	putenv(home);
+	printf("HOME env variable set to:%s\n",home);
+
 	if (signal(SIGCHLD, SIGCHLD_handler) == SIG_ERR) {
-		printf("SIGINT install error\n");
+		printf("Signal received for internal error...");
 		exit(1);
 	}
 	// allocates memory for the command input
@@ -217,9 +254,8 @@ int main( void ) {
 	while(1)
 	{
 		//input prompt
-		printf("\n->");
+		printf("->");
 		bytes_read = getline (&my_string, &nbytes, stdin);
-
 		if (bytes_read == -1)
 		{
 			puts ("Error while reading command line");
