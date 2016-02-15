@@ -7,6 +7,15 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <termios.h>
+
+void add_his_commands();
+void add_command(char*);
+void print_his_commands();
+int command_his_buffsize = 50;
+char **his_commands;
+int command_count = 0;
+char * find_command(char*);
 
 pid_t pid1;
 int timer = 2;
@@ -29,8 +38,6 @@ char* get_var(char *file, char *key) {
 
 	while ((read = getline(&line, &len, fp)) != -1) {
 		if(strstr(line, key) != NULL){
-			//token = strtok(line, search);
-			//token = strtok(NULL, search);
 			token = line;
 			break;
 		}
@@ -226,13 +233,26 @@ void SIGCHLD_handler(int num)
 
 int main( void ) {
 	// number of bytes to read
-	int nbytes = 100,bytes_read;
+	int nbytes = 255,tab_found = 0;
 	// input command will be stored in my_string
 	char *my_string;
+	my_string = (char *) malloc (nbytes + 1);
+	his_commands = malloc(command_his_buffsize * sizeof(char*));
+	//change input mode to raw
+	//so that no \n is waited for.
+	struct termios attr;
+	tcgetattr(0, &attr);
+	attr.c_lflag &= ~ICANON;
+	tcsetattr(0, TCSANOW, &attr);
+	int next =0;
+	add_his_commands();
+	print_his_commands();
+	int inside_i = 0;
 	// after parsing of commands, o/p is stored in args
 	char **arguments;
-	char ch;
 	int contains_io =0;
+
+
 
 	printf("Reading profile file...\n");
 	putenv(get_var(".profile","TIMER"));
@@ -249,7 +269,65 @@ int main( void ) {
 		printf("Signal received for internal error...");
 		exit(1);
 	}
-	// allocates memory for the command input
+	/* Loop reading and executing lines until the user quits. */
+	while ( 1 )
+	{
+		//input prompt
+		printf("\n->");
+		if(next >0)
+			printf("%s",my_string);
+		char ch;
+		if(tab_found != 1) {
+			inside_i =0;
+		}
+		tab_found = 0;
+		int ns = 0;
+		next = 1;
+		while ((ch = getchar()) != '\n' && ch != EOF)
+		{
+			if(ch =='\t') {
+				tab_found = 1;
+				break;
+			}
+			if(inside_i < 100) {
+				my_string[inside_i] = ch;
+			} else {
+				break;
+			}
+			inside_i++;
+		}
+		if(tab_found == 1) {
+
+			char * suggest_word=find_command(my_string);
+			if (suggest_word !=NULL) {
+				my_string = NULL;
+				free(my_string);
+				my_string = (char *) malloc (nbytes + 1);
+				strcpy(my_string,suggest_word);
+			}
+		} else {
+			add_command(my_string);
+			/*if(strstr(my_string,"exit")!=NULL) {
+				break;
+			}*/
+			contains_io=0;
+			if (strstr(my_string, "=>") != NULL) {
+				contains_io=1;
+			}
+
+			arguments = splitInputCommands(my_string);
+
+			parseArguments(arguments,contains_io);
+			my_string = NULL;
+			free(my_string);
+			my_string = (char *) malloc (nbytes + 1);
+		}
+		print_his_commands();
+	}
+	free(his_commands);
+	free(my_string);
+	return 0;
+	/*// allocates memory for the command input
 	my_string = (char *) malloc (nbytes + 1);
 	while(1)
 	{
@@ -278,4 +356,59 @@ int main( void ) {
 	free(my_string);
 	free(arguments);
 	return 0;
+	 */
+}
+
+void add_his_commands(){
+	char *command;
+	command = (char*) malloc(4*sizeof(char));
+	strcpy(command, "cat");
+	his_commands[0]=command;
+
+	command = (char*) malloc(3*sizeof(char));
+	strcpy(command, "ls");
+	his_commands[1]=command;
+
+	command = (char*) malloc(4*sizeof(char));
+	strcpy(command, "help");
+	his_commands[2]=command;
+	command_count = 3;
+}
+
+void print_his_commands() {
+	printf("\n");
+	for ( int i=0;i<command_count;i++) {
+		printf("saved command:%s\n",his_commands[i]);
+	}
+}
+
+void add_command(char*my_string) {
+	printf("added:%s\n",my_string);
+	const char *s;
+	char * command;
+	if (command_count >= command_his_buffsize) {
+		command_his_buffsize = command_his_buffsize + 50;
+		his_commands = realloc(his_commands, command_his_buffsize * sizeof(char*));
+		if (!his_commands) {
+			fprintf(stderr, "Memory allocation failed, relaunch the program");
+			exit(0);
+		}
+	}
+	for (s = my_string; *s; ++s);
+	size_t size = (s - my_string);
+	command = (char*) malloc((size+1)*sizeof(char));
+	strcpy(command,my_string);
+	his_commands[command_count] = command;
+	command_count++;
+}
+
+char *find_command (char * command_name)
+{
+	int i;
+
+	for (i = 0; i < command_count; i++)
+		if (strstr (his_commands[i], command_name) != NULL)
+			return (his_commands[i]);
+
+	return NULL;
 }
