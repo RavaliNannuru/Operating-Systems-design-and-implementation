@@ -94,9 +94,7 @@ int exec_io_redirection(char **args) {
 				res[i] = args[i];
 			}
 			char *output = args[output_loc + 1];
-			for (char **temparg = res; *temparg; ++temparg) {
-				puts(*temparg);
-			}
+
 			int fd1 = creat(output , 0644) ;
 			dup2(fd1, STDOUT_FILENO);
 			close(fd1);
