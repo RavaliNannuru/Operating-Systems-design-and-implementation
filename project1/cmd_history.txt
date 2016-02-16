@@ -1,0 +1,57 @@
+zcommand arg
+dcommand arg
+man read
+acommand arg
+cc -o myshell myshell.c
+gcommand arg
+mcommand arg
+fcommand arg
+mined doc.txt
+1command arg
+gcommand arg1
+dcclear
+dcummand
+clear
+gcommand arg123
+exit
+mount -t vbfs -o share=devel none /mnt
+pointer
+dcommand arg
+mget -all
+zcommand arg
+gcommand arg1234
+command
+exit
+gcommand arg6
+cat
+how are you
+clear
+exit
+ls
+exit
+cat => ls
+exit
+clear
+ls
+exit
+clear
+ls
+cat cmd_history.txt
+ls
+clear
+ls
+cat cmd_history.txt => test
+ls
+cat test
+clear
+ls
+cat
+cat
+clear
+clear
+cat
+cat
+clear
+ls
+cat
+cat
