@@ -65,8 +65,8 @@ char* get_var(char *file, char *key);
 int parseArguments(char **args, int is_io);
 int execCommands(char **);
 int exec_io_redirection(char **);
-void SIGCHLD_handler(int);
-void chld_SIGQUIT_handler(int num);
+void sigchild_handler(int);
+void chlid_sigquit_handler(int num);
 
 
 

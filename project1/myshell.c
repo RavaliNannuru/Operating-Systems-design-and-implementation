@@ -60,7 +60,7 @@ int main(void){
 	return 0;
 }
 
-void chld_SIGQUIT_handler(int num)
+void child_sigquit_handler(int num)
 {
 	exit(0);
 }
@@ -82,7 +82,9 @@ int exec_io_redirection(char **args) {
 	if (command_count >= 3) {
 		pid_t pidp = getpid();
 		pid1 = fork();
-
+		if(pid1 !=0 && pid1 !=-1) {
+			printf("fork: child process creation failed");
+		}
 		if (pid1 == -1) {
 			perror("Failed during fork");
 			status = 1;
@@ -106,7 +108,7 @@ int exec_io_redirection(char **args) {
 		} else {
 			pid2 = fork();
 			if (pid2 == 0) {
-				if (signal(SIGQUIT, chld_SIGQUIT_handler) == SIG_ERR) {
+				if (signal(SIGQUIT, child_sigquit_handler) == SIG_ERR) {
 					printf("Signal received for internal error...");
 					exit(1);
 				}
@@ -147,7 +149,7 @@ int execCommands(char **args)
 	pid1 = fork();
 	if (pid1 == 0) {
 		childpid=getpid();
-		if (signal(SIGQUIT, chld_SIGQUIT_handler) == SIG_ERR) {
+		if (signal(SIGQUIT, child_sigquit_handler) == SIG_ERR) {
 			printf("Signal received for internal error...");
 			exit(1);
 		}
@@ -165,7 +167,7 @@ int execCommands(char **args)
 			pid2 =getpid();
 			char ch;
 
-			if (signal(SIGQUIT, chld_SIGQUIT_handler) == SIG_ERR) {
+			if (signal(SIGQUIT, child_sigquit_handler) == SIG_ERR) {
 				printf("Signal received for internal error...");
 				exit(1);
 			}
@@ -191,7 +193,7 @@ int execCommands(char **args)
 	return 1;
 
 }
-void SIGCHLD_handler(int num)
+void sigchild_handler(int num)
 {
 	kill(pid1, SIGQUIT);
 }

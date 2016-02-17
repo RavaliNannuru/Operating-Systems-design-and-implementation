@@ -27,31 +27,3 @@ cat
 how are you
 clear
 exit
-ls
-exit
-cat => ls
-exit
-clear
-ls
-exit
-clear
-ls
-cat cmd_history.txt
-ls
-clear
-ls
-cat cmd_history.txt => test
-ls
-cat test
-clear
-ls
-cat
-cat
-clear
-clear
-cat
-cat
-clear
-ls
-cat
-cat
