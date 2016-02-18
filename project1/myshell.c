@@ -32,7 +32,8 @@ int main(void){
 	home=get_var(".profile","HOME");
 	//putenv(home);
 	printf("HOME env variable set to:%s\n",home);
-
+	history=get_value(home);
+	strcat(history,"/cmd_history.txt");
 	while(1){
 		//clear contents of the arrays for next input.
 		memset(cmd,'\0',strlen(cmd));
@@ -72,7 +73,6 @@ int exec_io_redirection(char **args) {
 	char *choice;
 
 	for (char **temparg = args; *temparg; ++temparg) {
-		printf("arg:%s\n",*temparg);
 		if(strstr(*temparg, "=>") != NULL) {
 			output_loc = command_count;
 		}
@@ -87,10 +87,11 @@ int exec_io_redirection(char **args) {
 			perror("Failed during fork");
 			status = 1;
 		} else if (pid1_io == 0) {
-			printf("inside");
 			childpid_io=getpid();
 			char *res[output_loc];
+			int command_vals[output_loc];
 			char **temparg = args;
+
 			for(int i = 0; i < output_loc;i++) {
 				int char_count=0;
 				char *temp=*temparg;
@@ -98,17 +99,33 @@ int exec_io_redirection(char **args) {
 					char_count++;
 					temp++;
 				}
-				printf("cc:%d\n",char_count);
-				res[i] = malloc((char_count+1)*sizeof(char));
-				strcpy(res[i],*temparg);
-
+				command_vals[i]= char_count;
 				if(i+1 == output_loc){
-					temparg +=2;
+					++temparg;
+					++temparg;
 				}
 				else {
 					++temparg;
 				}
+
 			}
+			char **values = malloc((output_loc+1) * sizeof(char*));
+
+			char **newarg = args;
+			char *token = strtok(*newarg, "\0");
+			int pos=0;
+			while (token != NULL) {
+				if (pos == output_loc) {
+					break;
+				}
+				values[pos] = token;
+				printf("token:%s",token);
+				pos++;
+				newarg++;
+				token = strtok(*newarg, "\0");
+			}
+			values[pos]=NULL;
+
 			int char_count=0;
 			char *temp=*temparg;
 			while (*temp != '\0') {
@@ -117,21 +134,16 @@ int exec_io_redirection(char **args) {
 			}
 			char output[char_count+1] ;
 			strcpy(output,*temparg);
-			for (int i=0;i< output_loc; i++) {
-				printf("arg:%s\n",res[i]);
-			}
-			printf("output%sm\n",output);
+			output[char_count] = '\0';
 			int fd1 = creat(output , 0644) ;
-			printf("fd%d\n",fd1);
 			dup2(fd1, STDOUT_FILENO);
-			printf("b close");
 			close(fd1);
+			int val = execvp(*values,values);
 
-			printf("start");
-			int val = execvp(res[0], res);
 			if (val==-1){
 				perror("Failed during execution of commands");
 			}
+			free(values);
 			exit(0);
 
 		} else {
@@ -236,9 +248,20 @@ int parseArguments(char **args, int is_io)
 		puts("shell is gone exit");
 		exit(0);
 	}
-	/*else if (is_io == 1) {
+	else if (is_io == 1) {
 		return exec_io_redirection(args);
-	}*/
+	}
+	else if (strcmp(args[0],"cd") == 0){
+		printf("cd happened!\n");
+		if(args[1] == NULL)
+			path = getenv("HOME");
+		if(chdir(args[1])==0)
+			;
+		else
+			printf("cannot cd to %s\n",args[1]);
+
+		return 1;
+	}
 	else
 	{
 		return execCommands(args);
@@ -331,7 +354,9 @@ void read_cmdline(char* cmdline){
 	File manipulation to save the command history.
 	 */
 	if(length > 0){
-		fid = open("/mnt/myshell/cmd_history.txt",O_RDWR);
+		if(open("/root/cmd_history.txt",O_RDWR == -1))	//ADD THESE TWO LINES
+			open("/root/cmd_history.txt",O_CREAT);		//TO THE CODE.
+		fid = open("/root/cmd_history.txt",O_RDWR);
 		lseek(fid,0,SEEK_END);		//points to EOF
 		write(fid,cmdline,strlen(cmdline));
 		write(fid,"\n",1);	//insertion of blank line for next command; don't know if necessary
@@ -411,7 +436,7 @@ void suggest(char* line, int* last){
 	arr = calloc(MAX_LEN,MAX_LEN);
 	temp = malloc(MAX_LEN);
 
-	fid = open("cmd_history.txt",O_RDWR);
+	fid = open("/root/cmd_history.txt",O_RDWR);
 	lseek(fid,0,SEEK_SET);
 	read(fid,list,MAX_FILE);
 	close(fid);
@@ -490,6 +515,13 @@ char* get_var(char *file, char *key){
 	return token;
 }
 
+char* get_value(char *variable){
+	char * token;
+	token = strtok(variable, "=");
+	token =strtok(NULL,"=");
+	//printf("value:%s",token);
+	return token;
+}
 
 //sort
 /*

@@ -52,7 +52,7 @@ struct env_var{
 	
 int imp = 0;
 int timer = 2;
-char * path,*home;
+char * path,*home,*history;
 pid_t pid1,childpid,pid2;
 pid_t pid1_io,childpid_io,pid2_io;
 
@@ -71,7 +71,7 @@ int execCommands(char **);
 int exec_io_redirection(char **);
 void sigchild_handler(int);
 void chlid_sigquit_handler(int num);
-
+char* get_value(char *variable);
 
 
 

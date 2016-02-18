@@ -1,7 +1,7 @@
 while read line 
 do
 
-echo $line | grep "TIMER" >/dev/null
+echo $line | grep 'TIMER' >/dev/null
 if [ $? = 0 ]
 then
 true
