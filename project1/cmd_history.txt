@@ -14,7 +14,7 @@ dcummand
 clear
 gcommand arg123
 exit
-mount -t vbfs -o share=devel none /mnt
+mount val
 pointer
 dcommand arg
 mget -all

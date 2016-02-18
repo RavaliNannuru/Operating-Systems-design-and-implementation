@@ -27,10 +27,10 @@ int main(void){
 	timer=atoi(getenv("TIMER"));
 	printf("Timer set to:%d\n\n",timer);
 	path=get_var(".profile","PATH");
-	putenv(path);
+	//putenv(path);
 	printf("PATH env variable set to:%s\n\n",path);
 	home=get_var(".profile","HOME");
-	putenv(home);
+	//putenv(home);
 	printf("HOME env variable set to:%s\n",home);
 
 	while(1){
@@ -69,10 +69,10 @@ int exec_io_redirection(char **args) {
 	int command_count = 0;
 	int output_loc = -1;
 	int status = 0;
-	char **res;
 	char *choice;
 
 	for (char **temparg = args; *temparg; ++temparg) {
+		printf("arg:%s\n",*temparg);
 		if(strstr(*temparg, "=>") != NULL) {
 			output_loc = command_count;
 		}
@@ -81,33 +81,62 @@ int exec_io_redirection(char **args) {
 
 	if (command_count >= 3) {
 		pid_t pidp = getpid();
-		pid1 = fork();
-		if(pid1 !=0 && pid1 !=-1) {
-			printf("fork: child process creation failed");
-		}
-		if (pid1 == -1) {
+		pid1_io = fork();
+
+		if (pid1_io == -1) {
 			perror("Failed during fork");
 			status = 1;
-		} else if (pid1 == 0) {
-			childpid=getpid();
-			res = malloc((output_loc) * sizeof(char*));
-
+		} else if (pid1_io == 0) {
+			printf("inside");
+			childpid_io=getpid();
+			char *res[output_loc];
+			char **temparg = args;
 			for(int i = 0; i < output_loc;i++) {
-				res[i] = args[i];
-			}
-			char *output = args[output_loc + 1];
+				int char_count=0;
+				char *temp=*temparg;
+				while (*temp != '\0') {
+					char_count++;
+					temp++;
+				}
+				printf("cc:%d\n",char_count);
+				res[i] = malloc((char_count+1)*sizeof(char));
+				strcpy(res[i],*temparg);
 
+				if(i+1 == output_loc){
+					temparg +=2;
+				}
+				else {
+					++temparg;
+				}
+			}
+			int char_count=0;
+			char *temp=*temparg;
+			while (*temp != '\0') {
+				char_count++;
+				temp++;
+			}
+			char output[char_count+1] ;
+			strcpy(output,*temparg);
+			for (int i=0;i< output_loc; i++) {
+				printf("arg:%s\n",res[i]);
+			}
+			printf("output%sm\n",output);
 			int fd1 = creat(output , 0644) ;
+			printf("fd%d\n",fd1);
 			dup2(fd1, STDOUT_FILENO);
+			printf("b close");
 			close(fd1);
-			if (execvp(res[0], res)==-1){
+
+			printf("start");
+			int val = execvp(res[0], res);
+			if (val==-1){
 				perror("Failed during execution of commands");
 			}
 			exit(0);
 
 		} else {
-			pid2 = fork();
-			if (pid2 == 0) {
+			pid2_io = fork();
+			if (pid2_io == 0) {
 				if (signal(SIGQUIT, child_sigquit_handler) == SIG_ERR) {
 					printf("Signal received for internal error...");
 					exit(1);
@@ -125,12 +154,11 @@ int exec_io_redirection(char **args) {
 					}
 				}
 			}
-			waitpid(childpid,0,0);
+			waitpid(childpid_io,0,0);
 		}
 
-		kill(pid2, SIGQUIT);
-		waitpid(pid2,0,0);
-		free(res);
+		kill(pid2_io, SIGQUIT);
+		waitpid(pid2_io,0,0);
 		return 1;
 	} else {
 		printf("Error in number of inputs");
@@ -203,15 +231,14 @@ int parseArguments(char **args, int is_io)
 {
 
 	int status=0;
-
 	if (strcmp(args[0],"exit")==0)
 	{
 		puts("shell is gone exit");
 		exit(0);
 	}
-	else if (is_io == 1) {
+	/*else if (is_io == 1) {
 		return exec_io_redirection(args);
-	}
+	}*/
 	else
 	{
 		return execCommands(args);

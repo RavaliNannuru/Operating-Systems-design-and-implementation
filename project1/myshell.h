@@ -4,6 +4,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ipc.h>
+#include <time.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
@@ -51,6 +54,7 @@ int imp = 0;
 int timer = 2;
 char * path,*home;
 pid_t pid1,childpid,pid2;
+pid_t pid1_io,childpid_io,pid2_io;
 
 /*
 Headers for functions used in main.c for the
