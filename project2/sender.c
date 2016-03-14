@@ -6,8 +6,13 @@
 
 int main(int argc, char *argv[])
 {
+	if(argc < 4) {
+		printf("Number of arguments for the sender process is less...\n");
+		printf("Format:./sender <queuename> <message> <list of receivers>...\n");
+		return -1;
+	}
 	char queue_name[30];
-	strcpy(queue_name,"firstqueue5");
+	strcpy(queue_name,argv[1]);
 	message m1,m2;
 	m1.m1_p1 = queue_name;
 	int queue_identifier = mq_open(m1);
@@ -17,8 +22,8 @@ int main(int argc, char *argv[])
 		char message[30];
 		int r=0;
 		int i=0,j;
-		strcpy(message,argv[1]);
-		for(j=2;j<argc;j++)
+		strcpy(message,argv[2]);
+		for(j=3;j<argc;j++)
 		{
 			i=atoi(argv[j]);
 			r |= (1<<i);

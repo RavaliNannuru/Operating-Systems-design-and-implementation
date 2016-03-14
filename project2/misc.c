@@ -551,16 +551,17 @@ int do_mq_send() {
 
 	if(queue_index != -1) {
 		int start_index = 0;
+		int current_size = 0;
 		for(int k = 0; k<queue_index;k++) {
 			start_index += queue_size[k];
 		}
 		printf("start index:%d\n",start_index);
 
 		int i = start_index;
+		current_size = i;
 		while(rec[i] != 0 && i < queue_size[queue_index])
 			i++;
-		//printf(" i = %d with who as\n",i);
-		if (i == queue_size[queue_index])
+		if (i == (queue_size[queue_index] + current_size))
 		{
 			printf("Queue size is full...Try after sometime \n");
 			return 0;
