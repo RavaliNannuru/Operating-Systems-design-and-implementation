@@ -1,0 +1,7 @@
+#define mq_open(m1)		_syscall(PM_PROC_NR,PM_MQ_OPEN, &m1)
+#define mq_close(m1)		_syscall(PM_PROC_NR,PM_MQ_CLOSE, &m1)
+#define mq_send(m1)		_syscall(PM_PROC_NR,PM_MQ_SEND, &m1)
+#define mq_receive(m1)		_syscall(PM_PROC_NR,PM_MQ_RECEIVE, &m1)
+#define mq_setattr(m1)		_syscall(PM_PROC_NR,PM_MQ_SETATTR, &m1)
+#define mq_getattr(m1)		_syscall(PM_PROC_NR,PM_MQ_GETATTR, &m1)
+#define mq_reqnotify(m1)		_syscall(PM_PROC_NR,PM_MQ_REQNOTIFY, &m1)
