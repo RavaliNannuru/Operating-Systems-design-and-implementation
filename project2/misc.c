@@ -470,7 +470,7 @@ int do_mq_open() {
 	int queue_index;
 	int queue_available = 0;
 	int new_queue_position;
-
+	printf("From mq_open...\n");
 	if (start == 0) {
 		printf("Inside start\n");
 		start = 1;
@@ -559,7 +559,7 @@ int do_mq_send() {
 
 		int i = start_index;
 		current_size = i;
-		while(rec[i] != 0 && i < queue_size[queue_index])
+		while(rec[i] != 0 && i < (queue_size[queue_index] + current_size))
 			i++;
 		if (i == (queue_size[queue_index] + current_size))
 		{
@@ -568,9 +568,9 @@ int do_mq_send() {
 		}
 		if (sys_datacopy(who_e, (vir_bytes)message_in, SELF, (vir_bytes) &message_queue[i][0],(vir_bytes)30) != OK)
 			return -1;
-			rec[i] = r;
-			printf("Message added to queue\n");
-			return 0;
+		rec[i] = r;
+		printf("Message added to queue\n");
+		return 0;
 	} else {
 		printf("Queue to send a message does not exist...");
 	}
@@ -578,8 +578,80 @@ int do_mq_send() {
 	//error case
 	return -1;
 }
+
+int tracker(int recv,int index)
+{
+
+	if (counter[index]==0)
+		previous[index]=recv;
+
+	if(previous[index]==recv)
+		counter[index]=counter[index] + 1;
+
+	if (counter[index] >= 100)
+		return 0;
+
+	return 1;
+}
+
 int do_mq_receive() {
 	printf("From mq_receive...\n");
+	char *queue_name_in = m_in.m1_p2;
+	char queue_name_input[30];
+	int queue_index = -1;
+	//get queue_index,to send a message
+	sys_datacopy(who_e, (vir_bytes)queue_name_in, SELF, (vir_bytes) &queue_name_input,(vir_bytes)30);
+	for(int i = 0;i<10;i++) {
+		if (strcmp(queue_name_input,queue_name[i]) == 0) {
+			printf("Queue Found... its index:%d\n",i);
+			queue_index = i;
+			break;
+		}
+	}
+
+	if(queue_index != -1) {
+		int start_index = 0;
+		int current_size = 0;
+		for(int k = 0; k<queue_index;k++) {
+			start_index += queue_size[k];
+		}
+		printf("start index:%d\n",start_index);
+		char *p = m_in.m1_p1;
+		int r = (int) m_in.m1_i1;
+		int i = start_index, j = 0;
+		current_size=i;
+		int c=0;
+		while( i < (queue_size[queue_index] + current_size) )
+		{
+			j = rec[i] & r;
+			if(rec[i] & r)
+			{
+				if (sys_datacopy(SELF, (vir_bytes)message_queue[i], who_e, (vir_bytes)p, (vir_bytes)30) != OK) return 0;
+				rec[i] = rec[i] & ~r;
+				strcpy(message_queue[i],"");
+				int cindex=i;
+				if(rec[i]==0)
+				{
+					do
+					{
+						rec[cindex]=rec[cindex+1];
+						strcpy(message_queue[cindex],message_queue[cindex+1]);
+						cindex++;
+					}while(rec[cindex]!=0 && cindex < (queue_size[queue_index] + current_size) );
+				}
+				return 1;
+			}
+			else
+			{
+				if (tracker(r,queue_index)==0)
+					return -2;
+			}
+			i++;
+		}
+		printf("No Message exist for receiver...\n");
+	} else {
+		printf("Queue to receive a message does not exist...\n");
+	}
 	return 0;
 }
 int do_mq_setattr(){
