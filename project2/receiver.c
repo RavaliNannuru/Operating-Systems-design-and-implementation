@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	strcpy(queue_name,argv[1]);
 	char p[30]="";
 	int j=0,r,err;
-	unsigned int i= 0 ;
+	int i= 0 ;
 
 	for(j=2;j<argc;j++)
 	{

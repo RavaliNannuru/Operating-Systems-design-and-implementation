@@ -3,6 +3,7 @@
 #include<stdlib.h>
 #include<lib.h>
 #include"mqueue.h"
+#include <signal.h>
 
 int main(int argc, char *argv[])
 {

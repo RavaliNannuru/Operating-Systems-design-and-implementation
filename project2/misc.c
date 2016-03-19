@@ -38,6 +38,9 @@ int inuse[10] = {0,0,0,0,0,0,0,0,0,0};
 int previous[10] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 int counter[10] = {0,0,0,0,0,0,0,0,0,0};
 int rec[150];
+// array to store list of receivers per queue(queue no is same as index in queue_name)
+// to send signal
+int rec_signal[10][10];
 
 struct utsname uts_val = {
 		OS_NAME,		/* system name */
@@ -486,6 +489,11 @@ int do_mq_open() {
 			rec[i]=0;
 		}
 		message_queue[i]=NULL;
+		for(int j = 0;j<10;j++) {
+			for(int k=0;k<10;k++) {
+				rec_signal[j][k]=-1;
+			}
+		}
 	}
 	char output[30];
 	char *p = m_in.m1_p1;
@@ -570,6 +578,16 @@ int do_mq_send() {
 			return -1;
 		rec[i] = r;
 		printf("Message added to queue\n");
+		//check receiver requested for signal notification...
+		for(int k=0;k<10;k++) {
+			int temp =  0;
+			temp |= (1<<rec_signal[queue_index][k]);
+			if(temp & r) {
+				printf("Sending signal for receiver:%d\n",rec_signal[queue_index][k]);
+				check_sig(rec_signal[queue_index][k],SIGCONT,FALSE);
+				break;
+			}
+		}
 		return 0;
 	} else {
 		printf("Queue to send a message does not exist...");
@@ -664,5 +682,54 @@ int do_mq_getattr(){
 }
 int do_mq_reqnotify(){
 	printf("From mq_reqnotify...\n");
+	char *queue_name_in = m_in.m1_p1;
+	char queue_name_input[30];
+	int queue_index = -1;
+	int receiver = (int) m_in.m1_i1;
+
+	//get queue_index,to send a message
+	sys_datacopy(who_e, (vir_bytes)queue_name_in, SELF, (vir_bytes) &queue_name_input,(vir_bytes)30);
+	for(int i = 0;i<10;i++) {
+		if (strcmp(queue_name_input,queue_name[i]) == 0) {
+			printf("Queue Found...its index:%d\n",i);
+			queue_index = i;
+			break;
+		}
+	}
+
+	if(queue_index != -1) {
+		//check whether receiver already in list
+		int rec_exist = 0;
+		int rec_index = -1;
+		for(int i=0;i<10;i++) {
+			if(rec_signal[queue_index][i]== receiver) {
+				rec_exist = 1;
+				rec_index = i;
+				break;
+			}
+		}
+
+		if(rec_exist==1) {
+			printf("Receiver exist in the request queue...\n");
+		} else {
+			//find open position to add receiver
+			int open_position = -1;
+			for(int i =0;i<10;i++) {
+				if(rec_signal[queue_index][i]==-1){
+					open_position = i;
+					break;
+				}
+			}
+			if(open_position ==-1) {
+				printf("Maximum limit recievers req for notification reached...\n");
+			} else {
+				rec_signal[queue_index][open_position]=receiver;
+				printf("Receiver:%d added for notification in queue:%d at position:%d\n",receiver,queue_index,open_position);
+			}
+		}
+
+	} else {
+		printf("Queue to request a notification does not exist...\n");
+	}
 	return 0;
 }
