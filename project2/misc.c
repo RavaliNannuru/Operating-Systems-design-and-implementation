@@ -41,6 +41,8 @@ int rec[150];
 // array to store list of receivers per queue(queue no is same as index in queue_name)
 // to send signal
 int rec_signal[10][10];
+// array to store details about blocking or non-blocking system call
+int queue_scall_type [10][1];
 
 struct utsname uts_val = {
 		OS_NAME,		/* system name */
@@ -492,6 +494,9 @@ int do_mq_open() {
 		for(int j = 0;j<10;j++) {
 			for(int k=0;k<10;k++) {
 				rec_signal[j][k]=-1;
+				if(k<1) {
+					queue_scall_type[j][k] = -1;
+				}
 			}
 		}
 	}
@@ -525,6 +530,8 @@ int do_mq_open() {
 			strcpy(queue_name[new_queue_position],output);
 			inuse[new_queue_position] = 1;
 			queue_size[new_queue_position] = no_of_messages;
+			//default queue supports non blocking system call
+			queue_scall_type[new_queue_position][0] = 0;
 			printf("New queue created at:%d\n",new_queue_position);
 		} else {
 			printf("Queue cannot be created, number of queue exceeded size limit...\n");
@@ -674,10 +681,66 @@ int do_mq_receive() {
 }
 int do_mq_setattr(){
 	printf("From mq_setattr...\n");
+	char *queue_name_in = m_in.m1_p1;
+	char queue_name_input[30];
+	int queue_index = -1;
+	//get queue_index,to send a message
+	sys_datacopy(who_e, (vir_bytes)queue_name_in, SELF, (vir_bytes) &queue_name_input,(vir_bytes)30);
+	for(int i = 0;i<10;i++) {
+		if (strcmp(queue_name_input,queue_name[i]) == 0) {
+			printf("Queue Found... its index:%d\n",i);
+			queue_index = i;
+			break;
+		}
+	}
+
+	if(queue_index != -1) {
+		printf("Queue Name is :%s\n",queue_name_input);
+		// TODO Queue size
+		printf("Queue Size set to:%d\n",(int) m_in.m1_i1);
+		int block_nblock = (int) m_in.m1_i2;
+		queue_scall_type[queue_index][0] = block_nblock;
+		if(block_nblock == 0){
+			printf("Current queue type set to support non-blocking system call...\n");
+		} else {
+			printf("Current queue type set to support blocking system call...\n");
+		}
+
+	} else {
+		printf("Specified queue does not exist...\n");
+	}
+
 	return 0;
 }
 int do_mq_getattr(){
 	printf("From mq_getattr...\n");
+	char *queue_name_in = m_in.m1_p1;
+	char queue_name_input[30];
+	int queue_index = -1;
+	//get queue_index,to send a message
+	sys_datacopy(who_e, (vir_bytes)queue_name_in, SELF, (vir_bytes) &queue_name_input,(vir_bytes)30);
+	for(int i = 0;i<10;i++) {
+		if (strcmp(queue_name_input,queue_name[i]) == 0) {
+			printf("Queue Found... its index:%d\n",i);
+			queue_index = i;
+			break;
+		}
+	}
+
+	if(queue_index != -1) {
+
+		printf("Queue Name:%s\n",queue_name_input);
+		printf("Queue Size:%d\n",queue_size[queue_index]);
+		if(queue_scall_type[queue_index][0]==0){
+			printf("Current queue supports non-blocking system call...\n");
+		} else {
+			printf("Current queue supports blocking system call...\n");
+		}
+
+	} else {
+		printf("Specified queue does not exist...\n");
+	}
+
 	return 0;
 }
 int do_mq_reqnotify(){
