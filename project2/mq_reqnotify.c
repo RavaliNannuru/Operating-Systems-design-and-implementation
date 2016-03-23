@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 
 	if(argc < 3) {
 		printf("Number of arguments for the notification process is less...\n");
-		printf("Format:./req_notifi <queuename> <reciever_pid>...\n");
+		printf("Format:./mq_reqnotify <queuename> <reciever_pid>...\n");
 		return -1;
 	}
 	char queue_name[30];
