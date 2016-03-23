@@ -2,3 +2,17 @@
 paulo-proj/
 
 balajiar_a20347964_project1.zip
+
+project2/mq_close
+
+project2/mq_getattr
+
+project2/mq_reqnotify
+
+project2/mq_setattr
+
+project2/receiver
+
+project2/receiver_notification
+
+project2/sender

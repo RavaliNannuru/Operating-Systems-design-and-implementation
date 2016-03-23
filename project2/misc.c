@@ -544,7 +544,68 @@ int do_mq_open() {
 
 int do_mq_close() {
 	printf("From mq_close...\n");
-	return 0;
+	//getting name of the queue to be "closed"
+	int queue_found = 0;
+	int queue_index = 0;
+
+	/*
+	 * message structure is first pointer has the name of queue
+	 * to be closed.
+	 */
+	char output[30];
+	char *p = m_in.m1_p1;
+	sys_datacopy(who_e, (vir_bytes)p, SELF, (vir_bytes) &output,(vir_bytes)30);
+	printf("Queue to be closed: %s\n",output);
+
+	//look for queue to be closed.
+	for(int i = 0;i<10;i++) {
+		if (strcmp(output,queue_name[i]) == 0) {
+			printf("Queue Found its index:%d\n",i);
+			queue_found = 1;
+			queue_index = i;
+			break;
+		}
+	}
+
+	//found queue, removed the reference to its slot being used.
+	if(queue_found == 1){
+		//clearing the name field of the queue
+		strcpy(&queue_name[queue_index][0],"");
+
+		int start_indexq = 0;
+		int end_indexq = 0;
+		for(int i = 0; i<= queue_index; i++) {
+			if(queue_index==0) {
+				end_indexq=queue_size[queue_index];
+				break;
+			}
+			start_indexq +=queue_size[i];
+			end_indexq = start_indexq+queue_size[i];
+		}
+
+		//clearing the message array of the referred queue
+		for(;start_indexq<end_indexq;start_indexq++) {
+			strcpy(&message_queue[start_indexq][0],"");
+			rec[start_indexq]=0;
+		}
+		//now clear the reference arrays for the queue to be seen as closed
+		inuse[queue_index] = 0;
+		queue_size[queue_index] = 0;
+		previous[queue_index]=-1;
+		counter[queue_index]=-1;
+
+		for(int i =0;i<10;i++) {
+			rec_signal[queue_index][i] = -1;
+		}
+		printf("Queue is closed: %s\n",output);
+		return 0;
+	}
+
+	//didn't find anyone, return -1 for signaling queue doesn't exist.
+	else{
+		printf("Queue %s does not exist...\n",output);
+		return -1;
+	}
 }
 int do_mq_send() {
 	printf("From mq_send...\n");
