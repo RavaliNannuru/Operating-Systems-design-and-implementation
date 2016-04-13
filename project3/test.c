@@ -3,61 +3,51 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
 int inodewalker();
 int zonewalker();
+int zinfo();
 
-#define KNRM  "\x1B[0m"
-
-void print_menu(void);
+int print_menu(void);
 
 int main(void){
-	printf("%s\n\n================== TEST PROGRAM No.1 ==================\n", KNRM);
-	printf("\nDescription:\n");
-	printf("This program will allow you to test the system calls.\n");
+
 	while(TRUE){
-		print_menu();
+		if(print_menu()==1) {
+			break;
+		}
 	}
 	return 0;
 }
 
-void print_menu(void){
-	int inode_nb;
+int print_menu(void){
+	int result = 0;
 	int choice;
-	char dir_path[128];
-	printf("%s\n\nMENU - PROCESS %d\n", KNRM, getpid());
+	printf("\nSelect an option\n");
 	printf("1. Inode walker\n");
 	printf("2. Zone walker\n");
-	printf("3. Repair tool\n");
-	printf("4. Damage inode\n");
-	printf("5. Damage directory file\n");
+	printf("3. Directory walker\n");
+	printf("0. Break\n");
 	scanf("%d", &choice);
 	getchar();
 	switch(choice){
 		case 1:
-			printf("\nINODE WALKER\n");
+			printf("\nInode Walker\n");
 	  		inodewalker();
 	  		break;
 	  	case 2:
-		    printf("\nZONE WALKER\n");
+		    printf("\nZone Walker\n");
 			zonewalker();
 			break;
 		case 3:
-			printf("REPAIR TOOL\n");
-			//recovery();
+			printf("\nDirectory Walker\n");
+			zinfo();
 			break;
-		case 4:
-			printf("\nDAMAGE INODE\n");
-			printf("Inode number: ");
-			scanf("%d", &inode_nb);
-			//damage_inode(inode_nb);
-			break;
-		case 5:
-			printf("\nDAMAGE DIRECTORY FILE\n");
-			printf("Directory: ");
-			scanf("%s", dir_path);
-			//damage_dir(dir_path);
+		case 0:
+			result = 1;
 			break;
 	}
+	return result;
 }
 
 int inodewalker()
@@ -77,5 +67,13 @@ int zonewalker()
   int ret = (_syscall(VFS_PROC_NR, VFS_ZONEWALKER, &m));
   if (ret < 0)
 	  return m.m1_i1; //return error code
+  return ret;
+}
+
+int zinfo()
+{
+  message m;
+  memset(&m, 0, sizeof(m));
+  int ret = (_syscall(VFS_PROC_NR, VFS_ZINFO, &m));
   return ret;
 }
