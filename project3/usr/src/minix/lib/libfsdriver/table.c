@@ -38,5 +38,6 @@ int (*fsdriver_callvec[NREQS])(const struct fsdriver * __restrict,
 	CALL(REQ_PEEK)		= fsdriver_peek,
 	CALL(REQ_BPEEK)		= fsdriver_bpeek,
 	CALL(REQ_INODEWALKER) = fsdriver_iwalker,
-	CALL(REQ_ZONEWALKER)  = fsdriver_zwalker
+	CALL(REQ_ZONEWALKER)  = fsdriver_zwalker,
+	CALL(REQ_ZINFO)  = fsdriver_zinfo
 };

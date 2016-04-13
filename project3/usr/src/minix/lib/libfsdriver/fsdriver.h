@@ -79,6 +79,8 @@ extern int fsdriver_iwalker(const struct fsdriver * __restrict,
 	const message * __restrict, message * __restrict);
 extern int fsdriver_zwalker(const struct fsdriver * __restrict,
 	const message * __restrict, message * __restrict);
+extern int fsdriver_zinfo(const struct fsdriver * __restrict,
+	const message * __restrict, message * __restrict);
 
 extern dev_t fsdriver_device;
 extern ino_t fsdriver_root;

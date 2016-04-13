@@ -124,10 +124,11 @@
 #define VFS_COPYFD		(VFS_BASE + 46)
 #define VFS_CHECKPERMS		(VFS_BASE + 47)
 #define VFS_GETSYSINFO		(VFS_BASE + 48)
-#define VFS_INODEWALKER (VFS_BASE + 49)
-#define VFS_ZONEWALKER  (VFS_BASE + 50)
-#define VFS_ZINFO  (VFS_BASE + 51)
+#define VFS_GETFREEINODE    (VFS_BASE + 49)
+#define VFS_INODEWALKER (VFS_BASE + 50)
+#define VFS_ZONEWALKER  (VFS_BASE + 51)
+#define VFS_ZINFO  (VFS_BASE + 52)
 
-#define NR_VFS_CALLS		52	/* highest number from base plus one */
+#define NR_VFS_CALLS		53	/* highest number from base plus one */
 
 #endif /* !_MINIX_CALLNR_H */

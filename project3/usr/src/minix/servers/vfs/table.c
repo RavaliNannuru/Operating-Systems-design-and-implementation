@@ -65,5 +65,6 @@ int (* const call_vec[NR_VFS_CALLS])(void) = {
 		CALL(VFS_CHECKPERMS)	= do_checkperms,	/* checkperms(2) */
 		CALL(VFS_GETSYSINFO)	= do_getsysinfo,	/* getsysinfo(2) */
 		CALL(VFS_INODEWALKER)   = do_inodewalker,
-		CALL(VFS_ZONEWALKER)	= do_zonewalker
+		CALL(VFS_ZONEWALKER)	= do_zonewalker,
+		CALL(VFS_ZINFO)	= do_zinfo
 };

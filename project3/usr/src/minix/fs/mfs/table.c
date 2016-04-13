@@ -44,4 +44,5 @@ struct fsdriver mfs_table = {
 		.fdr_bflush	= lmfs_bflush,
 		.fdr_iwalker = fs_inodewalker,
 		.fdr_zwalker = fs_zonewalker,
+		.fdr_zinfo = fs_zinfo
 };

@@ -1234,3 +1234,15 @@ endpoint_t fs_e;
 	/* Send request */
 	return fs_sendrec(fs_e, &m);
 }
+
+int req_zinfo(fs_e)
+endpoint_t fs_e;
+{
+	message m;
+
+	/* Fill in request message */
+	m.m_type = REQ_ZINFO;
+
+	/* Send request */
+	return fs_sendrec(fs_e, &m);
+}

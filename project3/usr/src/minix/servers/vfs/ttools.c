@@ -80,24 +80,15 @@ int do_zonewalker(){
 	return r;
 }
 
-/* System call recovery */
-int do_recovery(){
-	printf("FUCK YOU EVEN MORE\n");
-	printf("MODE: %d", m_in.m1_i1);
-	return 0;
-}
-
-/* System call damage inode */
-int do_damage_inode(){
-	printf("FUCK YOU EVEN EVEN MORE\n");
-	printf("INODE NR: %d", m_in.m1_i1);
-	return 0;
-}
-
-/* System call damage directory file */
-int do_damage_dir(){
-	char* msg = m_in.m1_p1;
-	printf("FUCK YOU EVEN EVEN MORE\n");
-	printf("DIRECTORY PATH: %s", msg);
+int do_zinfo(){
+	printf("Start of Zone Info from VFS\n");
+	/*struct vmnt *vmp;
+	struct vnode *vp;
+	struct lookup resolve;
+	char fullpath[PATH_MAX] = "/";
+	Get a virtual inode and virtual mount corresponding to the path
+	lookup_init(&resolve, fullpath, PATH_NOFLAGS, &vmp, &vp);
+	req_zinfo(vmp->m_fs_e);*/
+	//printf("MODE: %d", m_in.m1_i1);
 	return 0;
 }

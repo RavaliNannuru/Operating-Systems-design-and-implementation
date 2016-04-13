@@ -1022,6 +1022,7 @@ fsdriver_iwalker(const struct fsdriver * __restrict fdp,
 	printf("RETURN VALUE OF FSDRIVER_IWALKER: %d\n", r);
 	return r;
 }
+
 /* Process a ZONEWALKER request from VFS */
 int
 fsdriver_zwalker(const struct fsdriver * __restrict fdp,
@@ -1031,4 +1032,13 @@ fsdriver_zwalker(const struct fsdriver * __restrict fdp,
 	int r = fdp->fdr_zwalker();
 	printf("RETURN VALUE OF FSDRIVER_ZWALKER: %d\n", r);
 	return r;
+}
+
+int
+fsdriver_zinfo(const struct fsdriver * __restrict fdp,
+		const message * __restrict m_in, message * __restrict __unused m_out)
+{
+	printf("Hey I am from zinfo\n");
+	fdp->fdr_zinfo();
+	return 0;
 }
