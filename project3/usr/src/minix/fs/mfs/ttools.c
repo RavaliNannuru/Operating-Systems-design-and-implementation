@@ -55,8 +55,70 @@ int repair    = 0;
 int markdirty = 0;
 int type = 0;
 
-int fs_zinfo() {
-	printf("From Zone Information...\n");
+int fs_zinfo(ino_t ino_nr,dev_t dev) {
+	printf("\tFrom Zone Information...\n");
+	struct inode *ino;
+	int* list = malloc(sizeof(int)*NB_INODES*V2_NR_DZONES);
+	int used_zones = 0;
+	int indirect_zones = 0;
+	int double_indirect_zones = 0;
+	struct inode *rip;
+	int* zones;
+	zone_t *indir, *double_indir;
+	struct buf *buf;
+	int i, j, k = 0;
+	int found = 0;
+
+	/* Don't increase the inode refcount: it's already open anyway */
+	if ((ino = get_inode(dev,ino_nr)) == NULL)
+		return EINVAL;
+	printf("\tInode Found:%llu\n",ino_nr);
+	printf("\tPrcessing Zones\n");
+	zones = ino->i_zone;
+
+	/* Check direct zones (zones[0] --> zones[6]) */
+	for (j = 0; j < V2_NR_DZONES; ++j){
+		if (zones[j] == 0){ break;}
+		found = 1;
+		list[used_zones] = zones[j];
+		printf("\tZone %d : %d\n", j, list[used_zones]);
+		used_zones++;
+	}
+	if(found == 0) {
+		printf("\tZones not allocated...\n");
+	}
+	/* Check indirect zones (zones[7]) */
+	if (zones[j] != 0) {
+		printf("\tZone %d : %d\n", j, zones[j]);
+		indir = check_indir(zones[j]); //get list from indirect zone
+		for (k = 0; k < BLK_SIZE/2; ++k){
+			if (indir[k] == 0) break;
+			printf("\t\tZone %d : %d\n", k, indir[k]);
+			list[used_zones] = indir[k];
+			used_zones++;
+			indirect_zones++;
+		}
+		free(indir);
+
+		/* Check double indirect zones (zones[8]) */
+		j++;
+		if (zones[j] != 0) {
+			printf("\tZone %d : %d\n", j, zones[j]);
+			double_indir = check_double_indir(zones[j]);
+			for (int k = 0; k < BLK_SIZE/2*BLK_SIZE/2; ++k){
+				if (double_indir[k] == 0) break;
+				printf("\t\tZone %d : %d\n", k, double_indir[k]);
+				list[used_zones] = double_indir[k];
+				used_zones++;
+				double_indirect_zones++;
+			}
+			free(double_indir);
+			/* We should check triple indirect zones here (zones[10]) */
+			/* but none of our device has such big files that need    */
+			/* triple indirect zones.								  */
+		}
+	}
+
 	return 0;
 }
 
@@ -66,7 +128,7 @@ int fs_zinfo() {
 int fs_inodewalker()
 {
 	/* Get the list of blocks in use by the system from the inode bitmap */
-	printf("=== INODEWALKER ===\n");
+	printf("Inode Walker\n");
 	printf("Getting super node from device %llu ...\n", fs_dev);
 	type = IMAP;
 	sb = get_super(fs_dev);
@@ -78,12 +140,7 @@ int fs_inodewalker()
 	get_bitmap(imap_disk, IMAP);
 	printf(" done.\n");
 	sleep(3);
-	//print_bitmap(imap_disk);
 	int *list_inodes = get_list_used(imap_disk, IMAP);
-	/*sleep(5);
-	int *list_blocks;
-	if ((list_blocks = get_list_blocks_from_inodes(list_inodes)) == NULL)
-		return -1;*/
 	free_bitmap(imap_disk);
 	return 0;
 }
@@ -94,7 +151,7 @@ int fs_inodewalker()
 int fs_zonewalker()
 {
 	/* Get the list of blocks used by the system from the zone bitmap */
-	printf("=== ZONEWALKER ===\n");
+	printf("Zone Walkder\n");
 	printf("Getting super node from device %llu ...\n", fs_dev);
 	type = ZMAP;
 	sb = get_super(fs_dev);
@@ -113,31 +170,6 @@ int fs_zonewalker()
 	return 0;
 }
 
-/*===========================================================================*
- *				fs_recovery			        *
- *===========================================================================*/
-/* System call recovery
-int do_recovery(){
-	printf("FUCK YOU EVEN MORE\n");
-	printf("MODE: %d", m_in.m1_i1);
-	return 0;
-}
-
- System call damage inode
-int do_damage_inode(){
-	printf("FUCK YOU EVEN EVEN MORE\n");
-	printf("INODE NR: %d", m_in.m1_i1);
-	return 0;
-}
-
- System call damage directory file
-int do_damage_dir(){
-	char* msg = m_in.m1_p1;
-	printf("FUCK YOU EVEN EVEN MORE\n");
-	printf("DIRECTORY PATH: %s", msg);
-	return 0;
-}
-*/
 /*===========================================================================*
  *				init_global		     *
  *===========================================================================*/
@@ -176,16 +208,16 @@ int* get_list_used(bitchunk_t *bitmap, int type)
 		nblk = N_IMAP;
 		tot  = NB_INODES;
 		list = malloc(sizeof(int)*NB_INODES);
-		printf("============= Used inodes ==============\n");
+		printf("Used Inodes\n");
 	}
 	else /* type == ZMAP */ {
 		nblk = N_ZMAP;
 		tot  = NB_ZONES;
 		list = malloc(sizeof(int)*NB_ZONES);
-		printf("============= Used blocks ==============\n");
+		printf("Used Blocks\n");
 	}
 	sleep(1);
-	printf("\n=========================================\n");
+	printf("\n\n");
 	/* Loop through bitchunks in bitmap */
 	for (int j = 0; j < FS_BITMAP_CHUNKS(BLK_SIZE)*nblk; ++j){
 		chunk = int2binstr(bitmap[j]);
@@ -203,7 +235,7 @@ int* get_list_used(bitchunk_t *bitmap, int type)
 	}
 	if (type == IMAP)    NB_INODES_USED  = NB_USED;
 	else/*(type==ZMAP)*/ NB_ZONES_USED_Z = NB_USED;
-	printf("\n=========================================\n\n");
+	printf("\n\n");
 	printf("Used: %d / %d \n", NB_USED, tot);
 	return list;
 }
@@ -216,7 +248,7 @@ int* get_list_blocks_from_inodes(int* inodes)
 	/* From a list of inode numbers, fetch each inode and list the
 	 * blocks associated with it.
 	 */
-	int* list = malloc(sizeof(int)*NB_INODES*V2_NR_DZONES);;
+	int* list = malloc(sizeof(int)*NB_INODES*V2_NR_DZONES);
 	int used_zones = 0;
 	int indirect_zones = 0;
 	int double_indirect_zones = 0;
@@ -291,13 +323,13 @@ int* get_list_blocks_from_inodes(int* inodes)
 		/* Free inode */
 		put_inode(rip);
 	}
-	printf("============= Used zones ==============\n");
+	printf("Used zones\n");
 	sleep(2);
 	for (int k = 0; k < used_zones; ++k){
 		printf("%d, ", list[k]);
 		if ((k % 5) == 0) printf("\n");
 	}
-	printf("\n==========================================\n\n");
+	printf("\n\n");
 	printf("Number of used zones:            %d\n", used_zones);
 	printf("Number of indirect zones:        %d\n", indirect_zones);
 	printf("Number of double indirect zones: %d\n", double_indirect_zones);
@@ -401,18 +433,18 @@ bitchunk_t *bitmap;
 	bitchunk_t *bf;
 	int nblk;
 	if (type == IMAP){
-		printf("======== Inode bitmap (first chunks) =======\n");
+		printf("Inode bitmap\n");
 		nblk = N_IMAP;
 	}
 	else /* type == ZMAP */{
-		printf("======== Zone bitmap (first chunks) ========\n");
+		printf("Zone bitmap\n");
 		nblk = N_ZMAP;
 	}
-	printf("\n=========================================\n");
+	printf("\n\n");
 	for (int j = 0; j < FS_BITMAP_CHUNKS(BLK_SIZE)*nblk; ++j){
 		printf("%s\n", int2binstr(bitmap[j]));
 	}
-	printf("\n==========================================\n\n");
+	printf("\n\n");
 }
 
 /*===========================================================================*
@@ -492,11 +524,11 @@ unsigned nelem, elsize;
 bitchunk_t *alloc_bitmap(nblk)
 int nblk;
 {
-  /* Allocate `nblk' blocks worth of bitmap. */
-  register bitchunk_t *bitmap;
-  bitmap = (bitchunk_t *) alloc((unsigned) nblk, BLK_SIZE);
-  *bitmap |= 1;
-  return bitmap;
+	/* Allocate `nblk' blocks worth of bitmap. */
+	register bitchunk_t *bitmap;
+	bitmap = (bitchunk_t *) alloc((unsigned) nblk, BLK_SIZE);
+	*bitmap |= 1;
+	return bitmap;
 }
 /*===========================================================================*
  *				free_bitmap		     		*
@@ -504,8 +536,8 @@ int nblk;
 void free_bitmap(p)
 bitchunk_t *p;
 {
-  /* Deallocate the bitmap `p'. */
-  free((char *) p);
+	/* Deallocate the bitmap `p'. */
+	free((char *) p);
 }
 
 /*===========================================================================*

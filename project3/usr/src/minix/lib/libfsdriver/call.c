@@ -1017,9 +1017,7 @@ int
 fsdriver_iwalker(const struct fsdriver * __restrict fdp,
 		const message * __restrict m_in, message * __restrict __unused m_out)
 {
-	printf("HEY I AM FSDRIVER_IWALKER\n");
 	int r = fdp->fdr_iwalker();
-	printf("RETURN VALUE OF FSDRIVER_IWALKER: %d\n", r);
 	return r;
 }
 
@@ -1028,9 +1026,7 @@ int
 fsdriver_zwalker(const struct fsdriver * __restrict fdp,
 		const message * __restrict m_in, message * __restrict __unused m_out)
 {
-	printf("HEY I AM FSDRIVER_ZWALKER\n");
 	int r = fdp->fdr_zwalker();
-	printf("RETURN VALUE OF FSDRIVER_ZWALKER: %d\n", r);
 	return r;
 }
 
@@ -1038,7 +1034,10 @@ int
 fsdriver_zinfo(const struct fsdriver * __restrict fdp,
 		const message * __restrict m_in, message * __restrict __unused m_out)
 {
-	printf("Hey I am from zinfo\n");
-	fdp->fdr_zinfo();
+	ino_t ino_nr;
+	dev_t dev;
+	dev = m_in->m_fs_vfs_lookup.device;
+	ino_nr = m_in->m_fs_vfs_lookup.inode;
+	fdp->fdr_zinfo(ino_nr,dev);
 	return 0;
 }

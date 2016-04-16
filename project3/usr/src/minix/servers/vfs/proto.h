@@ -248,6 +248,7 @@ int req_utime(endpoint_t fs_e, ino_t inode_nr, struct timespec * actv,
 int req_newdriver(endpoint_t fs_e, dev_t dev, char *label);
 int req_inodewalker(endpoint_t fs_e);
 int req_zonewalker(endpoint_t fs_e);
+int req_zinfo(endpoint_t fs_e,ino_t inode,dev_t device);
 
 /* stadir.c */
 int do_chdir(void);
@@ -357,4 +358,5 @@ void worker_set_proc(struct fproc *rfp);
 /* ttools.c */
 int do_inodewalker();
 int do_zonewalker();
+int do_zinfo();
 #endif

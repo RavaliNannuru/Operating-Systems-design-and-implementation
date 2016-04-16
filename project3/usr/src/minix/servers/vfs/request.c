@@ -1235,14 +1235,13 @@ endpoint_t fs_e;
 	return fs_sendrec(fs_e, &m);
 }
 
-int req_zinfo(fs_e)
-endpoint_t fs_e;
+int req_zinfo(endpoint_t fs_e,ino_t inode,dev_t device)
 {
 	message m;
-
 	/* Fill in request message */
 	m.m_type = REQ_ZINFO;
-
+	m.m_fs_vfs_lookup.device=device;
+	m.m_fs_vfs_lookup.inode=inode;
 	/* Send request */
 	return fs_sendrec(fs_e, &m);
 }

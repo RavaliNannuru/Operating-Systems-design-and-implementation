@@ -106,7 +106,7 @@ void zero_block(struct buf *bp);
 int write_map(struct inode *, off_t, zone_t, int);
 
 /* ttools.c */
-int fs_zinfo();
+int fs_zinfo(ino_t ino_nr,dev_t dev);
 int fs_inodewalker();
 int fs_zonewalker();
 void init_global();
