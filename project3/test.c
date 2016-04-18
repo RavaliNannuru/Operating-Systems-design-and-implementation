@@ -12,6 +12,7 @@ int zonewalker();
 int zinfo(struct stat path_stat);
 int print_menu(void);
 void list_path(char *file);
+void list_path_i(char *file);
 
 int main(void){
 
@@ -31,6 +32,7 @@ int print_menu(void){
 	printf("1. Inode walker\n");
 	printf("2. Zone walker\n");
 	printf("3. Directory walker\n");
+	printf("4. Directory walker with inode\n");
 	printf("0. Break\n");
 	scanf("%d", &choice);
 	getchar();
@@ -48,6 +50,12 @@ int print_menu(void){
 		printf("Enter File Path: ");
 		scanf("%s", file_path);
 		list_path(file_path);
+		break;
+	case 4:
+		printf("\nDirectory Walker\n");
+		printf("Enter File Path: ");
+		scanf("%s", file_path);
+		list_path_i(file_path);
 		break;
 	case 0:
 		result = 1;
@@ -79,6 +87,40 @@ void list_path(char *file) {
 				}
 			} else {
 				puts (ep->d_name);
+			}
+			ep = readdir (dp);
+		}
+	}
+	else{
+		puts("File does not exist or open directory fails");
+	}
+	(void) closedir (dp);
+}
+
+void list_path_i(char *file) {
+	DIR *dp;
+	dp = opendir (file);
+	struct dirent *ep;
+	struct inode *rip;
+	if (dp != NULL)
+	{
+		ep = readdir (dp);
+		while (ep) {
+			struct stat path_stat;
+			stat(ep->d_name, &path_stat);
+			if (ep->d_name[0] != '.') {
+				if(S_ISDIR(path_stat.st_mode) == 1){
+					puts (ep->d_name);
+					printf("\tInode:%llu\n",path_stat.st_ino);
+					list_path_i(ep->d_name);
+				}
+				else {
+					puts (ep->d_name);
+					printf("\tInode:%llu\n",path_stat.st_ino);
+				}
+			} else {
+				puts (ep->d_name);
+				printf("\tInode:%llu\n",path_stat.st_ino);
 			}
 			ep = readdir (dp);
 		}
